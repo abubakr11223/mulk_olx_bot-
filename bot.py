@@ -399,9 +399,13 @@ def get_uzs_rate():
         data = r.json()
         if data and isinstance(data, list):
             rate = float(data[0].get("Rate", UZS_RATE))
-            UZS_RATE       = rate
-            _uzs_rate_date = today
-            print(f"💱 CBU dollar kursi: {rate:.2f} UZS/USD ({today})")
+            # Sanity check: kurs 8000-20000 oraligida bo'lishi kerak
+            if 8000 < rate < 20000:
+                UZS_RATE       = rate
+                _uzs_rate_date = today
+                print(f"💱 CBU dollar kursi: {rate:.2f} UZS/USD ({today})")
+            else:
+                print(f"⚠ CBU kurs noto'g'ri ({rate}) — zaxira kurs {UZS_RATE} ishlatiladi")
     except Exception as e:
         print(f"⚠ CBU kurs olishda xato: {e} — avvalgi kurs {UZS_RATE} ishlatiladi")
     return UZS_RATE
@@ -828,6 +832,26 @@ def push_to_amocrm(ad):
 
     base    = f"https://{domain}/api/v4"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    # ── Sifat tekshiruvi — musor lead yuborilmasin ──
+    price_usd = ad.get("price_usd") or 0
+    title     = ad.get("title", "")
+
+    # 1. Narx mantiqiy bo'lishi kerak: $3000 — $3,000,000
+    if price_usd > 0 and not (3000 <= price_usd <= 3_000_000):
+        print(f"  ⚠ Narx noto'g'ri (${int(price_usd)}) — AmoCRM ga yuborilmadi: {title[:40]}")
+        return False
+
+    # 2. Arenda e'loni bo'lmasin
+    title_low = title.lower()
+    if any(w in title_low for w in ["arenda","ijara","аренда","сдаётся","сдам","сдаю","снять"]):
+        print(f"  ⚠ Arenda e'loni — AmoCRM ga yuborilmadi: {title[:40]}")
+        return False
+
+    # 3. URL bo'lishi shart
+    if not ad.get("url") or "olx.uz" not in ad.get("url",""):
+        print(f"  ⚠ URL noto'g'ri — AmoCRM ga yuborilmadi")
+        return False
 
     # ── Duplicate tekshiruv — qayta yuborilmasin ──
     if amocrm_lead_exists(base, headers, ad["url"]):

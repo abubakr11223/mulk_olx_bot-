@@ -1,5 +1,5 @@
 services:
-  - type: worker
+  - type: web
     name: mulk-olx-bot
     env: python
     buildCommand: pip install requests

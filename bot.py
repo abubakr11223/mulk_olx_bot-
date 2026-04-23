@@ -1353,5 +1353,22 @@ def run():
         except Exception as e:
             print(f"⚠ {e}"); time.sleep(3)
 
+def start_health_server():
+    """Render uchun minimal HTTP server (bepul plan talab qiladi)."""
+    import http.server, os
+    port = int(os.environ.get("PORT", 8080))
+    class H(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Mulk OLX Bot ishlayapti!")
+        def log_message(self, *a): pass
+    server = http.server.HTTPServer(("0.0.0.0", port), H)
+    print(f"🌐 Health server port {port} da ishga tushdi")
+    server.serve_forever()
+
 if __name__ == "__main__":
+    # Health server ni fon threadda ishga tushirish (Render uchun)
+    ht = threading.Thread(target=start_health_server, daemon=True)
+    ht.start()
     run()

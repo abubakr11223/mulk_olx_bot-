@@ -701,11 +701,13 @@ def why_filtered(ad, f, cutoff):
     if not num_ok(ad["floors"], f.get("etajnost_dan"), f.get("etajnost_gacha")): return f"etajnost={ad['floors']}"
     return "boshqa_filtr"
 
-def do_search(uid, f):
-    seen    = load_seen()
-    results = []
-    cutoff  = datetime.now() - timedelta(days=f.get("kun_soni", 7))
+def do_search(uid, f, _kun_override=None):
+    seen     = load_seen()
+    results  = []
+    kun_soni = _kun_override or f.get("kun_soni", 7)
+    cutoff   = datetime.now() - timedelta(days=kun_soni)
     max_page = 20
+    print(f"  🔍 Qidiruv: oxirgi {kun_soni} kun")
     # Filter stats
     stats = {"jami":0, "korsgan":0, "arenda":0, "agentlik":0,
              "shahar":0, "tuman":0, "eski":0, "narx":0, "raqam":0}
@@ -778,6 +780,14 @@ def do_search(uid, f):
 
     # Filter statistikasini chiqarish
     print(f"\n📊 Filter statistika: {stats}")
+
+    # Agar natija kam bo'lsa — kun_soni ni avtomatik kengaytirish
+    if not results and not _kun_override:
+        for wider_days in [15, 30]:
+            if wider_days > kun_soni:
+                print(f"  📅 Natija yo'q → {wider_days} kunga kengaytiramiz...")
+                return do_search(uid, f, _kun_override=wider_days)
+
     return results
 
 # ──────────────────────────────────────────────

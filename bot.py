@@ -561,8 +561,20 @@ def num_ok(val, lo, hi):
     return True
 
 ARENDA_WORDS = [
-    "arenda","ijara","аренда","сдаётся","сдам","сдаю",
-    "снять","посуточно","sutkalik","kunlik","oylik"
+    # O'zbek arenda so'zlari
+    "arenda","ijara","ijaraga","sutkalik","kunlik","oylik",
+    "beriladi","topshiriladi","bollar","bollarga","bollar_",
+    "mezmakler","mezmakl","kvartirant","kvartira olinadi",
+    "xona olinadi","olinadi","yotoqxona","hostel","komnata",
+    # Rus arenda so'zlari
+    "аренда","сдаётся","сдам","сдаю","снять","сниму",
+    "посуточно","квартирант","сдается","ищу жилье","ищу комнату",
+    "девушки","парни нужны","нужна девушка","нужен парень",
+    "нужны квартирантки","жильцы","жильца",
+    # Arenda belgilari sarlavhada
+    "в аренду","под аренду","для аренды","сдать","сдан",
+    # Ingliz
+    "for rent","monthly","per month",
 ]
 
 def matches(ad, f):
@@ -837,8 +849,8 @@ def push_to_amocrm(ad):
     price_usd = ad.get("price_usd") or 0
     title     = ad.get("title", "")
 
-    # 1. Narx mantiqiy bo'lishi kerak: $3000 — $3,000,000
-    if price_usd > 0 and not (3000 <= price_usd <= 3_000_000):
+    # 1. Narx mantiqiy bo'lishi kerak: $10,000 — $3,000,000 (arenda narxlari o'tmasin)
+    if price_usd > 0 and not (10_000 <= price_usd <= 3_000_000):
         print(f"  ⚠ Narx noto'g'ri (${int(price_usd)}) — AmoCRM ga yuborilmadi: {title[:40]}")
         return False
 

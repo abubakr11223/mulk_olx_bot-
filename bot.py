@@ -415,20 +415,28 @@ def _price_info(raw_ad):
     try:   val = float(reg.get("value") or 0)
     except: val = 0.0
 
-    # 1. Agar asl narx USD da bo'lsa
+    # 1. regularPrice.currency = USD → narx to'g'ridan-to'g'ri USD
     if "USD" in cur or "UE" in cur:
         return 0, val, True
+
+    # 2. displayValue da "у.е." yoki "$" bor → narx USD da yozilgan
     if any(x in dv for x in ["USD", "у.е", "у.е.", "$"]):
-        nums = re.sub(r'[^\d]', '', dv.split()[0] if dv.split() else "")
+        # BARCHA raqamlarni birlashtirish: "50 000 у.е." → "50000" → 50000.0
+        nums_str = re.sub(r'[^\d]', '', dv)
         try:
-            v = float(nums)
-            if v > 0: return 0, v, True
+            v = float(nums_str)
+            # Mantiqiy tekshiruv: USD narx 500 dan 10_000_000 gacha bo'lishi kerak
+            if 500 < v < 10_000_000:
+                return 0, v, True
         except: pass
 
-    # 2. So'm da bo'lsa — CBU kursi bilan USD ga konvertatsiya
+    # 3. regularPrice.value bor → bu UZS, CBU kursi bilan USD ga aylantirish
     if val > 0:
         rate = get_uzs_rate()
-        usd  = val / rate
+        # Kichik son (< 50_000) USD bo'lishi mumkin (OLX ba'zan shunday saqlaydi)
+        if val < 50_000:
+            return 0, val, True   # USD sifatida qabul qilamiz
+        usd = val / rate
         return int(val), usd, False
 
     return 0, 0, False
@@ -795,6 +803,21 @@ def _num(val):
     try: return float(re.sub(r'[^\d.]', '', str(val or "")))
     except: return None
 
+def amocrm_lead_exists(base, headers, olx_url):
+    """AmoCRM da bu OLX URL bilan lead allaqachon bormi? Duplicate oldini olish."""
+    try:
+        r = requests.get(f"{base}/leads",
+                         params={"query": olx_url, "limit": 1},
+                         headers=headers, timeout=10)
+        if r.status_code == 200:
+            leads = r.json().get("_embedded", {}).get("leads", [])
+            if leads:
+                print(f"  ⏩ AmoCRM: bu e'lon allaqachon bor (Lead #{leads[0]['id']}), o'tkazildi")
+                return True
+    except Exception as e:
+        print(f"  ⚠ AmoCRM duplicate tekshiruv: {e}")
+    return False
+
 def push_to_amocrm(ad):
     """E'lonni AmoCRM ga lead + kontakt sifatida yuboradi."""
     cfg    = load_config()
@@ -805,6 +828,10 @@ def push_to_amocrm(ad):
 
     base    = f"https://{domain}/api/v4"
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
+    # ── Duplicate tekshiruv — qayta yuborilmasin ──
+    if amocrm_lead_exists(base, headers, ad["url"]):
+        return True  # Allaqachon bor, lekin xato emas
 
     # ── Maxsus maydonlar (custom fields) ─────
     # ID lar amocrm_setup.py dan olindi

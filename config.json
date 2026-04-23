@@ -1,0 +1,16 @@
+{
+  "_izoh": "OLX.uz Scraper sozlamalari — kerakli qiymatlarni kiriting",
+  "telegram_bot_token": "8669371925:AAF6uCLmZ_urgNfxS3iAMRvRNmrG_SAJuO0",
+  "telegram_chat_id": "8546867911",
+  "shahar": "toshkent",
+
+  "_amocrm": "=== AmoCRM sozlamalari ===",
+  "amocrm_domain": "mulk.amocrm.ru",
+  "amocrm_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6Ijk5OTRkYWZlMDRiOWJhNzk5YTUzYzk1Y2U3NjEzMzQ0NTkxMTEwOGVlZTA4M2RlZDk1NDRiYjhkOTM3NmM3YTNlYmUwZDdjZTA1MGZjMjE1In0.eyJhdWQiOiI5N2RhMzZjNS1jMTQ4LTQ3NzAtODBiMi05OGI1NjFkNjJkMjIiLCJqdGkiOiI5OTk0ZGFmZTA0YjliYTc5OWE1M2M5NWNlNzYxMzM0NDU5MTExMDhlZWUwODNkZWQ5NTQ0YmI4ZDkzNzZjN2EzZWJlMGQ3Y2UwNTBmYzIxNSIsImlhdCI6MTc3Njc4MTI1MCwibmJmIjoxNzc2NzgxMjUwLCJleHAiOjE4MTM5NjgwMDAsInN1YiI6IjEzMTk0OTA2IiwiZ3JhbnRfdHlwZSI6IiIsImFjY291bnRfaWQiOjMyNzU2MDcwLCJiYXNlX2RvbWFpbiI6ImFtb2NybS5ydSIsInZlcnNpb24iOjIsInNjb3BlcyI6WyJwdXNoX25vdGlmaWNhdGlvbnMiLCJmaWxlcyIsImNybSIsImZpbGVzX2RlbGV0ZSIsIm5vdGlmaWNhdGlvbnMiXSwiaGFzaF91dWlkIjoiNzE2YjMzOWMtMWM0Yi00MDYzLWFjNTUtZmNkNWFmYTg1YWMxIiwiYXBpX2RvbWFpbiI6ImFwaS1iLmFtb2NybS5ydSJ9.O0SE7fj3d4dhZD912GtTPKLBomqZE0MCkKaJ2-WT8l28AqbFs6siIXGR1PLgOVvZL71uXRwOTbAsun7CPO5kNnBXJjq8RdbcCJ4eNvGhDOLh43JipesN8wLYCtY-9k1OL1hX2zyqwWMtmVFktjaODj_1b-5OHxPvZChX8RQH33N5OviULpJS0eROy7hzz52PkDxsObqCaN88M0M0-3noJt24CVsLa5bK0sF888_8FoULKAkXZvt5IirLl7HSxc-21hG4lkCJ4egF3BueVlFMmEmBCh4ySSKfPEBapDV66DtqZsTagHLpc-vFJ02ukpp4LE-BDfIGF6VxoYRfZ7zRhA",
+  "amocrm_pipeline_id": 10512362,
+  "amocrm_status_id": 84329458,
+
+  "_auto": "=== Avtomatik qidiruv ===",
+  "auto_search": true,
+  "auto_interval_min": 60
+}

@@ -554,10 +554,6 @@ ARENDA_WORDS = [
 ]
 
 def matches(ad, f):
-    # Faqat OLX da y.e. (USD) da narx ko'rsatilgan e'lonlar
-    if not ad.get("is_usd"):
-        return False  # UZS narxli e'lonlarni o'tkazib yuboramiz
-
     # Arenda e'lonlarini chiqarib tashlash
     title_low = ad["title"].lower()
     desc_low  = (ad.get("desc") or "").lower()

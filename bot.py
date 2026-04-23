@@ -382,7 +382,29 @@ def build_url(page=1):
         p.append(f"page={page}")
     return "https://www.olx.uz/nedvizhimost/kvartiry/?" + "&".join(p)
 
-UZS_RATE = 12800  # 1 USD ≈ 12800 so'm (taxminiy kurs)
+UZS_RATE      = 12800   # zaxira kurs (CBU dan olinmasa ishlatiladi)
+_uzs_rate_date = None   # oxirgi yangilanish sanasi
+
+def get_uzs_rate():
+    """Markaziy bank (CBU) dan joriy USD kursini oladi. Kuniga 1 marta yangilanadi."""
+    global UZS_RATE, _uzs_rate_date
+    today = datetime.now().strftime("%Y-%m-%d")
+    if _uzs_rate_date == today:
+        return UZS_RATE
+    try:
+        r = requests.get(
+            "https://cbu.uz/oz/arkhiv-kursov-valyut/json/USD/",
+            timeout=10
+        )
+        data = r.json()
+        if data and isinstance(data, list):
+            rate = float(data[0].get("Rate", UZS_RATE))
+            UZS_RATE       = rate
+            _uzs_rate_date = today
+            print(f"💱 CBU dollar kursi: {rate:.2f} UZS/USD ({today})")
+    except Exception as e:
+        print(f"⚠ CBU kurs olishda xato: {e} — avvalgi kurs {UZS_RATE} ishlatiladi")
+    return UZS_RATE
 
 def _price_info(raw_ad):
     """(uzs_val, usd_val, is_usd) qaytaradi"""
@@ -403,9 +425,10 @@ def _price_info(raw_ad):
             if v > 0: return 0, v, True
         except: pass
 
-    # 2. So'm da bo'lsa — USD ga konvertatsiya
+    # 2. So'm da bo'lsa — CBU kursi bilan USD ga konvertatsiya
     if val > 0:
-        usd = val / UZS_RATE
+        rate = get_uzs_rate()
+        usd  = val / rate
         return int(val), usd, False
 
     return 0, 0, False
@@ -415,18 +438,27 @@ def parse_price(raw_ad):
     if raw_ad["price"].get("free"): return "Bepul"
     uzs, usd, is_usd = _price_info(raw_ad)
     if usd > 0:
+        # Har doim y.e. (USD) da ko'rsatamiz
         usd_str = f"${int(usd):,}".replace(",", " ") + " y.e."
         if is_usd:
-            return usd_str
+            return usd_str          # Asl narx USD da
         else:
-            return f"≈{usd_str}"
+            rate = get_uzs_rate()
+            return f"≈{usd_str} (kurs: {int(rate):,})"  # UZS dan konvertatsiya
     dv = (raw_ad.get("price",{}) or {}).get("displayValue","") or ""
     return dv if dv else "Narx ko'rsatilmagan"
 
 def extract_price_usd(raw_ad):
-    """Filtrlash uchun USD raqamini qaytaradi"""
-    _, usd, _ = _price_info(raw_ad)
-    return usd if usd > 0 else None
+    """Filtrlash uchun USD raqamini qaytaradi.
+    Faqat ASAL narx USD da bo'lsa qaytaradi (UZS konvertatsiya emas)."""
+    _, usd, is_usd = _price_info(raw_ad)
+    # Faqat OLX da y.e. deb ko'rsatilgan narxlar
+    if usd > 0 and is_usd:
+        return usd
+    # UZS narxli e'lonlar uchun ham CBU kursi bilan qaytaramiz
+    if usd > 0:
+        return usd
+    return None
 
 def parse_param(params, key):
     for p in params:

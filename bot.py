@@ -530,6 +530,7 @@ def parse_ad(raw):
         "phone":     get_phone(raw),
         "photos":    get_photos(raw),
         "is_biz":    raw.get("isBusiness", False),
+        "is_usd":    _price_info(raw)[2],   # OLX da asl narx USD da bo'lsa True
         "rooms":     parse_param(params,"rooms"),
         "floor":     parse_param(params,"floor"),
         "floors":    parse_param(params,"building_floors"),
@@ -553,6 +554,10 @@ ARENDA_WORDS = [
 ]
 
 def matches(ad, f):
+    # Faqat OLX da y.e. (USD) da narx ko'rsatilgan e'lonlar
+    if not ad.get("is_usd"):
+        return False  # UZS narxli e'lonlarni o'tkazib yuboramiz
+
     # Arenda e'lonlarini chiqarib tashlash
     title_low = ad["title"].lower()
     desc_low  = (ad.get("desc") or "").lower()

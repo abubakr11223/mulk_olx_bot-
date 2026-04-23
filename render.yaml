@@ -1,0 +1,7 @@
+services:
+  - type: worker
+    name: mulk-olx-bot
+    env: python
+    buildCommand: pip install requests
+    startCommand: python3 bot.py
+    plan: free

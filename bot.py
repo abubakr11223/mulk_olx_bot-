@@ -479,10 +479,26 @@ def parse_param(params, key):
             return v.get("key", v.get("label", str(v))) if isinstance(v,dict) else str(v)
     return None
 
-def get_phone(ad):
-    for src in [ad.get("contact",{}).get("name",""), ad.get("user",{}).get("name","")]:
-        if src and re.search(r'\d{7,}', re.sub(r'\s','',src)):
-            d = re.sub(r'\D','',src)
+def get_phone(raw_ad):
+    """OLX dan telefon raqamini olish — ko'proq joydan qidiradi."""
+    # 1. Phones massivi (eng ishonchli)
+    for ph in raw_ad.get("user", {}).get("phones", []):
+        num = ph.get("number","") or ph.get("phone","") or ""
+        if num:
+            d = re.sub(r'\D','', num)
+            if len(d) >= 9:
+                if not d.startswith("998"): d = "998" + d[-9:]
+                return f"+{d}"
+    # 2. Contact / user name ichidan raqam izlash
+    for src in [
+        raw_ad.get("contact",{}).get("phone",""),
+        raw_ad.get("contact",{}).get("name",""),
+        raw_ad.get("user",{}).get("phone",""),
+        raw_ad.get("user",{}).get("name",""),
+        raw_ad.get("phoneNumber",""),
+    ]:
+        if src and re.search(r'\d{7,}', re.sub(r'\s','',str(src))):
+            d = re.sub(r'\D','', str(src))
             if len(d) >= 9:
                 if not d.startswith("998"): d = "998" + d[-9:]
                 return f"+{d}"
@@ -561,30 +577,46 @@ def num_ok(val, lo, hi):
     return True
 
 ARENDA_WORDS = [
-    # O'zbek arenda so'zlari
+    # O'zbek arenda
     "arenda","ijara","ijaraga","sutkalik","kunlik","oylik",
-    "beriladi","topshiriladi","bollar","bollarga","bollar_",
-    "mezmakler","mezmakl","kvartirant","kvartira olinadi",
-    "xona olinadi","olinadi","yotoqxona","hostel","komnata",
-    # Rus arenda so'zlari
-    "аренда","сдаётся","сдам","сдаю","снять","сниму",
-    "посуточно","квартирант","сдается","ищу жилье","ищу комнату",
-    "девушки","парни нужны","нужна девушка","нужен парень",
-    "нужны квартирантки","жильцы","жильца",
-    # Arenda belgilari sarlavhada
-    "в аренду","под аренду","для аренды","сдать","сдан",
+    "beriladi","topshiriladi","bollar","bollarga","mezmakler",
+    "kvartirant","olinadi","yotoqxona","hostel",
+    "sutka","bir oyga","bir kunga",
+    # Rus arenda (e va yo varianti ikkalasi ham)
+    "аренда","сдаётся","сдается","сдаю","сдам","сниму","снять",
+    "посуточно","квартирант","сдаётся","в аренду","под аренду",
+    "для аренды","сдать","сдан","ищу жилье","ищу комнату",
+    "жильцы","жильца","на долгий срок","на длительный срок",
+    "на длит","квартиру сниму","комнату сниму",
+    "нужна девушка","нужен парень","нужны квартирантки",
+    "подселение","подселю",
     # Ingliz
-    "for rent","monthly","per month",
+    "for rent","monthly","per month","long term",
+]
+
+# Hovli (private house) kalitlari — faqat kvartira kerak
+HOVLI_WORDS = [
+    "hovli","hovli-uy","коттедж","дача","частный дом",
+    "частный","таунхаус","дом в","участок","загородный",
+    "арендую дом","сдам дом",
 ]
 
 def matches(ad, f):
-    # Arenda e'lonlarini chiqarib tashlash
     title_low = ad["title"].lower()
     desc_low  = (ad.get("desc") or "").lower()
-    if any(w in title_low for w in ARENDA_WORDS):
+    all_text  = title_low + " " + desc_low
+
+    # 1. Arenda so'zlari — sarlavha va tavsifda
+    if any(w in all_text for w in ARENDA_WORDS):
         return False
-    # Tavsifda ham arenda so'zlarini tekshiramiz
-    if any(w in desc_low for w in ["arenda","ijara","аренда","сдаётся","сдам","сдаю"]):
+
+    # 2. Hovli/dача — faqat kvartira kerak
+    if any(w in all_text for w in HOVLI_WORDS):
+        return False
+
+    # 3. Narx $20,000 dan past bo'lmasin (ijara narxlari o'tmasin)
+    usd = ad.get("price_usd")
+    if usd is not None and usd > 0 and usd < 20_000:
         return False
 
     # Faqat egasidan
@@ -849,8 +881,8 @@ def push_to_amocrm(ad):
     price_usd = ad.get("price_usd") or 0
     title     = ad.get("title", "")
 
-    # 1. Narx mantiqiy bo'lishi kerak: $10,000 — $3,000,000 (arenda narxlari o'tmasin)
-    if price_usd > 0 and not (10_000 <= price_usd <= 3_000_000):
+    # 1. Narx mantiqiy bo'lishi kerak: $20,000 — $3,000,000
+    if price_usd > 0 and not (20_000 <= price_usd <= 3_000_000):
         print(f"  ⚠ Narx noto'g'ri (${int(price_usd)}) — AmoCRM ga yuborilmadi: {title[:40]}")
         return False
 
